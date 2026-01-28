@@ -1,0 +1,308 @@
+-- ADWBI_EXECUTE_PROCEDURES_MASTER_TABLE
+CREATE OR REPLACE TABLE MS_ADWBI.CTRL.ADWBI_EXECUTE_PROCEDURES_MASTER_TABLE (
+    PROJECT_NAME               VARCHAR,
+    JOB_CODE                   VARCHAR,
+    JOB_NAME                   VARCHAR,
+    STEP_NUMBER                NUMBER,
+    STEP_DESC                  VARCHAR,
+    ETL_LOGIC                  VARCHAR,
+    SOURCE_DATABASE_NAME       VARCHAR,
+    SOURCE_SCHEMA_NAME         VARCHAR,
+    SOURCE_TABLE_NAME          VARCHAR,
+    TARGET_DATABASE_NAME       VARCHAR,
+    TARGET_SCHEMA_NAME         VARCHAR,
+    TARGET_TABLE_NAME          VARCHAR,
+    CREATED_DATE               DATE
+);
+
+
+-- ADWBI_AUDIT_ERROR_LOG_TABLE
+CREATE OR REPLACE TABLE MS_ADWBI.CTRL.ADWBI_AUDIT_ERROR_LOG_TABLE (
+    RUN_ID                     NUMBER,
+    PROJECT_NAME               VARCHAR,
+    JOB_CODE                   VARCHAR,
+    JOB_NAME                   VARCHAR,
+    STEP_NUMBER                NUMBER,
+    STEP_DESC                  VARCHAR,
+    SOURCE_DATABASE_NAME       VARCHAR,
+    SOURCE_SCHEMA_NAME         VARCHAR,
+    SOURCE_TABLE_NAME          VARCHAR,
+    TARGET_DATABASE_NAME       VARCHAR,
+    TARGET_SCHEMA_NAME         VARCHAR,
+    TARGET_TABLE_NAME          VARCHAR,
+    RUN_START_DATE             TIMESTAMP,
+    RUN_END_DATE               TIMESTAMP,
+    LOAD_STATUS                VARCHAR,
+    ERROR_MESSAGE              VARCHAR
+);
+
+CREATE OR REPLACE SEQUENCE MS_ADWBI.CTRL.ADWBI_AUDIT_ERROR_LOG_TABLE_SEQ START = 1 INCREMENT = 1;
+
+
+-- STG_CUSTOMER
+CREATE OR REPLACE TABLE STAGE.MS_ADWBI.STG_CUSTOMER (
+    BusinessEntityID   NUMBER(38,0),
+    Prefix             VARCHAR,
+    FirstName          VARCHAR,
+    LastName           VARCHAR,
+    BirthDate          DATE,
+    MaritalStatus      VARCHAR,
+    Gender             VARCHAR,
+    EmailAddress       VARCHAR,
+    AnnualIncome       NUMBER(18,2),
+    TotalChildren      NUMBER(38,0),
+    EducationLevel     VARCHAR,
+    Occupation         VARCHAR,
+    HomeOwner          BOOLEAN
+);
+
+
+-- STG_PRODUCT
+CREATE OR REPLACE TABLE STAGE.MS_ADWBI.STG_PRODUCT (
+    ProductID              NUMBER(38,0),
+    ProductModelID         NUMBER(38,0),
+    ProductSubCategoryID   NUMBER(38,0),
+    ProductSKU             VARCHAR,
+    ProductName            VARCHAR,
+    ModelName              VARCHAR,
+    ProductDescription     VARCHAR,
+    ProductColor           VARCHAR,
+    ProductSize            VARCHAR,
+    ProductStyle           VARCHAR,
+    ProductCost            NUMBER(18,2),
+    ProductPrice           NUMBER(18,2)
+);
+
+
+-- STG_PRODUCT_CATEGORY
+CREATE OR REPLACE TABLE STAGE.MS_ADWBI.STG_PRODUCT_CATEGORY (
+    ProductCategoryID   NUMBER(38,0),
+    CategoryName        VARCHAR
+);
+
+
+-- STG_PRODUCT_SUBCATEGORY
+CREATE OR REPLACE TABLE STAGE.MS_ADWBI.STG_PRODUCT_SUBCATEGORY (
+    ProductSubCategoryID   NUMBER(38,0),
+    ProductCategoryID      NUMBER(38,0),
+    SubcategoryName        VARCHAR
+);
+
+
+-- 
+CREATE OR REPLACE TABLE STAGE.MS_ADWBI.STG_TERRITORY (
+    TerritoryID   NUMBER(38,0),
+    Region        VARCHAR,
+    Country       VARCHAR,
+    Continent     VARCHAR
+);
+
+
+-- STG_CALENDAR
+CREATE OR REPLACE TABLE STAGE.MS_ADWBI.STG_CALENDAR (
+    Date DATE
+);
+
+
+-- STG_FACT_SALES
+CREATE OR REPLACE TABLE STAGE.MS_ADWBI.STG_FACT_SALES (
+    OrderDate        DATE,
+    StockDate        DATE,
+    OrderNumber      VARCHAR,
+    ProductID        NUMBER(38,0),
+    BusinessEntityID NUMBER(38,0),
+    TerritoryID      NUMBER(38,0),
+    OrderLineItem    NUMBER(38,0),
+    OrderQuantity    NUMBER(38,0),
+    STG_LOAD_TS      TIMESTAMP_NTZ
+);
+
+
+-- STG_FACT_RETURNS
+CREATE OR REPLACE TABLE STAGE.MS_ADWBI.STG_FACT_RETURNS (
+    ReturnDate       DATE,
+    ProductID        NUMBER(38,0),
+    TerritoryID      NUMBER(38,0),
+    ReturnQuantity   NUMBER(38,0),
+    STG_LOAD_TS      TIMESTAMP_NTZ
+);
+
+
+-- DIM_PRODUCT_CATEGORY
+CREATE OR REPLACE TABLE MS_ADWBI.WORK.DIM_PRODUCT_CATEGORY (
+  PRODUCT_CATEGORY_SK  NUMBER NOT NULL,
+  PRODUCTCATEGORYID    NUMBER NOT NULL,
+  CATEGORYNAME         STRING,
+
+  StartDateTime        TIMESTAMP_NTZ NOT NULL,
+  EndDateTime          TIMESTAMP_NTZ,
+  CurrentFlag          BOOLEAN NOT NULL,
+  DeleteFlag           BOOLEAN NOT NULL,
+
+  WInsertDate          TIMESTAMP_NTZ NOT NULL DEFAULT CURRENT_TIMESTAMP(),
+  WUpdateDate          TIMESTAMP_NTZ,
+
+  CONSTRAINT UK_DIM_PRODUCT_CATEGORY UNIQUE (PRODUCTCATEGORYID)
+);
+
+CREATE OR REPLACE SEQUENCE MS_ADWBI.WORK.SEQ_DIM_PRODUCT_CATEGORY START = 1 INCREMENT = 1;
+
+
+-- DIM_PRODUCT_SUBCATEGORY
+CREATE OR REPLACE TABLE MS_ADWBI.WORK.DIM_PRODUCT_SUBCATEGORY (
+  PRODUCT_SUBCATEGORY_SK  NUMBER NOT NULL,
+  PRODUCTSUBCATEGORYID    NUMBER NOT NULL,   -- business key
+  PRODUCTCATEGORYID       NUMBER NOT NULL,   -- business key (lineage)
+  PRODUCT_CATEGORY_SK     NUMBER NOT NULL,   -- surrogate FK to DIM_PRODUCT_CATEGORY
+  SUBCATEGORYNAME         STRING,
+
+  StartDateTime           TIMESTAMP_NTZ NOT NULL,
+  EndDateTime             TIMESTAMP_NTZ,
+  CurrentFlag             BOOLEAN NOT NULL,
+  DeleteFlag              BOOLEAN NOT NULL,
+
+  WInsertDate             TIMESTAMP_NTZ NOT NULL DEFAULT CURRENT_TIMESTAMP(),
+  WUpdateDate             TIMESTAMP_NTZ,
+
+  CONSTRAINT UK_DIM_PRODUCT_SUBCATEGORY UNIQUE (PRODUCTSUBCATEGORYID)
+);
+
+CREATE OR REPLACE SEQUENCE MS_ADWBI.WORK.SEQ_DIM_PRODUCT_SUBCATEGORY START = 1 INCREMENT = 1;
+
+
+-- DIM_TERRITORY
+CREATE OR REPLACE SEQUENCE MS_ADWBI.WORK.SEQ_DIM_TERRITORY START = 1 INCREMENT = 1;
+
+CREATE OR REPLACE TABLE MS_ADWBI.WORK.DIM_TERRITORY (
+  TERRITORY_SK   NUMBER NOT NULL,
+  TERRITORYID    NUMBER NOT NULL,
+
+  Region         STRING,
+  Country        STRING,
+  Continent      STRING,
+
+  StartDateTime  TIMESTAMP_NTZ NOT NULL,
+  EndDateTime    TIMESTAMP_NTZ,
+  CurrentFlag    BOOLEAN NOT NULL,
+  DeleteFlag     BOOLEAN NOT NULL,
+
+  WInsertDate    TIMESTAMP_NTZ NOT NULL DEFAULT CURRENT_TIMESTAMP(),
+  WUpdateDate    TIMESTAMP_NTZ,
+
+  CONSTRAINT UK_DIM_TERRITORY UNIQUE (TERRITORYID)
+);
+
+
+-- DIM_CALENDAR
+CREATE OR REPLACE TABLE MS_ADWBI.WORK.DIM_CALENDAR (
+  DATE_SK         NUMBER(8,0) NOT NULL,   -- MMDDYYYY
+  CalendarDate    DATE NOT NULL,
+
+  StartDateTime   TIMESTAMP_NTZ NOT NULL,
+  EndDateTime     TIMESTAMP_NTZ,
+  CurrentFlag     BOOLEAN NOT NULL,
+  DeleteFlag      BOOLEAN NOT NULL,
+
+  WInsertDate     TIMESTAMP_NTZ NOT NULL DEFAULT CURRENT_TIMESTAMP(),
+  WUpdateDate     TIMESTAMP_NTZ,
+
+  CONSTRAINT PK_DIM_CALENDAR PRIMARY KEY (DATE_SK)
+);
+
+
+-- DIM_PRODUCT
+CREATE OR REPLACE SEQUENCE MS_ADWBI.WORK.SEQ_DIM_PRODUCT START = 1 INCREMENT = 1;
+
+CREATE OR REPLACE TABLE MS_ADWBI.WORK.DIM_PRODUCT (
+  PRODUCT_SK             NUMBER NOT NULL,
+  PRODUCTID              NUMBER(38,0) NOT NULL,          -- business key
+
+  PRODUCTMODELID         NUMBER(38,0),
+  PRODUCTSUBCATEGORYID   NUMBER(38,0),                  
+  PRODUCT_SUBCATEGORY_SK NUMBER(38,0),                   -- FK to DIM_PRODUCT_SUBCATEGORY
+  PRODUCT_CATEGORY_SK    NUMBER(38,0),                   -- FK to DIM_PRODUCT_CATEGORY
+
+  PRODUCTSKU             STRING,
+  PRODUCTNAME            STRING,                         -- SCD1
+  MODELNAME              STRING,                         -- SCD2
+  PRODUCTDESCRIPTION     STRING,                         -- SCD2
+  PRODUCTCOLOR           STRING,                         -- SCD1
+  PRODUCTSIZE            STRING,                         -- SCD1
+  PRODUCTSTYLE           STRING,                         -- SCD1
+  PRODUCTCOST            NUMBER(18,2),                   -- SCD2
+  PRODUCTPRICE           NUMBER(18,2),                   -- SCD2
+
+  StartDateTime          TIMESTAMP_NTZ NOT NULL,
+  EndDateTime            TIMESTAMP_NTZ,
+  CurrentFlag            BOOLEAN NOT NULL,
+  DeleteFlag             BOOLEAN NOT NULL,
+
+  WInsertDate            TIMESTAMP_NTZ NOT NULL DEFAULT CURRENT_TIMESTAMP(),
+  WUpdateDate            TIMESTAMP_NTZ
+);
+
+
+-- DIM_CUSTOMER
+CREATE OR REPLACE SEQUENCE MS_ADWBI.WORK.SEQ_DIM_CUSTOMER START = 1 INCREMENT = 1;
+
+CREATE OR REPLACE TABLE MS_ADWBI.WORK.DIM_CUSTOMER (
+  CUSTOMER_SK       NUMBER NOT NULL,
+  BUSINESSENTITYID  NUMBER(38,0) NOT NULL,     -- business key
+
+  PREFIX            STRING,                    -- SCD1
+  FIRSTNAME         STRING,                    -- SCD1
+  LASTNAME          STRING,                    -- SCD1
+  BIRTHDATE         DATE,                      -- SCD1 
+  MARITALSTATUS     STRING,                    -- SCD2
+  GENDER            STRING,                    -- SCD1
+  EMAILADDRESS      STRING,                    -- SCD1
+  ANNUALINCOME      NUMBER(18,2),              -- SCD2
+  TOTALCHILDREN     NUMBER(10,0),              -- SCD2
+  EDUCATIONLEVEL    STRING,                    -- SCD2
+  OCCUPATION        STRING,                    -- SCD2
+  HOMEOWNER         STRING,                    -- SCD2
+
+  StartDateTime     TIMESTAMP_NTZ NOT NULL,
+  EndDateTime       TIMESTAMP_NTZ,
+  CurrentFlag       BOOLEAN NOT NULL,
+  DeleteFlag        BOOLEAN NOT NULL,
+
+  WInsertDate       TIMESTAMP_NTZ NOT NULL DEFAULT CURRENT_TIMESTAMP(),
+  WUpdateDate       TIMESTAMP_NTZ
+);
+
+
+-- FACT_SALES
+CREATE OR REPLACE TABLE MS_ADWBI.WORK.FACT_SALES (
+  OrderDate_SK    NUMBER(8,0),
+  StockDate_SK    NUMBER(8,0),
+
+  OrderNumber     STRING,
+  OrderLineItem   NUMBER(38,0),
+
+  PRODUCT_SK      NUMBER,
+  CUSTOMER_SK     NUMBER,
+  TERRITORY_SK    NUMBER,
+
+  OrderQuantity   NUMBER(38,0),
+
+  WInsertDate     TIMESTAMP_NTZ DEFAULT CURRENT_TIMESTAMP(),
+  WUpdateDate     TIMESTAMP_NTZ
+);
+
+
+-- FACT_RETURNS
+CREATE OR REPLACE TABLE MS_ADWBI.WORK.FACT_RETURNS (
+  ReturnDate_SK   NUMBER(8,0),
+
+  TERRITORY_SK    NUMBER,
+  PRODUCT_SK      NUMBER,
+
+  ReturnQuantity  NUMBER(38,0),
+
+  WInsertDate     TIMESTAMP_NTZ DEFAULT CURRENT_TIMESTAMP(),
+  WUpdateDate     TIMESTAMP_NTZ
+);
+
+
+----------------------------------------------------------------------------------------------------------------------
